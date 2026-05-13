@@ -20,7 +20,6 @@ The project allows users to:
 - visualize constellation diagrams in real time,
 - observe waveform phase shifts,
 - compare multiple PSK modulation schemes,
-- simulate noise effects,
 - and interactively control animation speed.
 
 The goal is to make PSK modulation more intuitive and easier to learn for students studying:

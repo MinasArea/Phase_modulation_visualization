@@ -3,6 +3,11 @@
 An interactive educational visualization platform for understanding **Phase Shift Keying (PSK)** modulation techniques through real-time animations, constellation diagrams, waveform generation, and noise simulation.
 
 ---
+<img width="800" height="384" alt="demo" src="https://github.com/user-attachments/assets/6f3c84d0-44b4-4f96-9b04-64131cb0874a" />
+
+
+
+
 
 # Overview
 

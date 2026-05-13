@@ -1,0 +1,818 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PSK Complete Guide</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Bebas+Neue&display=swap');
+
+:root {
+  --bg: #0a0e14;
+  --s1: #0f1520;
+  --s2: #141d2b;
+  --border: #1e2d3d;
+  --text: #c8d6e0;
+  --muted: #4a6070;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+body { background:var(--bg); color:var(--text); font-family:'JetBrains Mono',monospace; min-height:100vh; }
+
+/* HEADER */
+.hdr {
+  text-align:center;
+  padding:1.5rem 1rem 1rem;
+  border-bottom:1px solid var(--border);
+  background:linear-gradient(180deg,#0d1f2d,var(--bg));
+  position:relative;
+}
+.hdr::before {
+  content:'';position:absolute;top:0;left:0;right:0;height:3px;
+  background:linear-gradient(90deg,transparent,var(--mc,#00d4ff),transparent);
+}
+.hdr h1 {
+  font-family:'Bebas Neue',sans-serif;
+  font-size:clamp(1.8rem,5vw,3rem);
+  letter-spacing:5px;
+  color:#00d4ff;
+}
+.hdr p { font-size:0.65rem; color:var(--muted); letter-spacing:3px; margin-top:0.3rem; }
+
+/* MODEL TABS */
+.tabs {
+  display:flex; justify-content:center; gap:0.4rem;
+  padding:1rem; flex-wrap:wrap;
+  background:var(--s1); border-bottom:1px solid var(--border);
+}
+.tab {
+  font-family:'Bebas Neue',sans-serif;
+  font-size:0.85rem; letter-spacing:1px;
+  padding:0.45rem 1rem;
+  border:1.5px solid var(--border);
+  background:var(--bg); color:var(--muted);
+  cursor:pointer; border-radius:3px; transition:all 0.2s;
+  text-align:center; line-height:1.4;
+}
+.tab span { display:block; font-family:'JetBrains Mono',monospace; font-size:0.55rem; letter-spacing:0; color:var(--muted); }
+.tab:hover { border-color:#00d4ff; color:#00d4ff; }
+.tab.active { border-color:var(--tc); color:var(--tc); background:color-mix(in srgb,var(--tc) 12%,var(--bg)); }
+
+/* PAGE LAYOUT */
+.page { display:none; max-width:1000px; margin:0 auto; padding:1.5rem 1rem 3rem; }
+.page.active { display:block; }
+
+/* TWO COL */
+.two-col { display:grid; grid-template-columns:1fr 1fr; gap:1.2rem; margin-bottom:1.2rem; }
+@media(max-width:680px){ .two-col { grid-template-columns:1fr; } }
+
+/* BOX */
+.box {
+  background:var(--s1); border:1px solid var(--border);
+  border-radius:6px; overflow:hidden;
+}
+.box-hdr {
+  background:var(--s2); border-bottom:1px solid var(--border);
+  padding:0.5rem 0.9rem; font-size:0.65rem;
+  letter-spacing:2px; color:var(--muted);
+  display:flex; align-items:center; gap:0.5rem;
+}
+.box-hdr .led { width:7px;height:7px;border-radius:50%;animation:blink 2s infinite; }
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0.3}}
+.box-body { padding:1rem; }
+
+/* CANVAS */
+canvas { display:block; }
+
+/* STATS */
+.stats { display:grid; grid-template-columns:repeat(3,1fr); gap:0.6rem; padding:1rem; }
+.stat { background:var(--s2); border:1px solid var(--border); border-radius:4px; padding:0.7rem; text-align:center; }
+.stat-n { font-family:'Bebas Neue',sans-serif; font-size:1.6rem; display:block; }
+.stat-l { font-size:0.6rem; color:var(--muted); letter-spacing:2px; text-transform:uppercase; }
+
+/* EXPLANATION */
+.expl { padding:1rem; font-size:0.75rem; line-height:1.9; }
+.expl h3 { font-family:'Bebas Neue',sans-serif; font-size:1rem; letter-spacing:2px; margin:0.9rem 0 0.4rem; }
+.expl p { margin-bottom:0.6rem; }
+.note {
+  background:var(--s2); border-left:2px solid var(--tc,#00d4ff);
+  padding:0.6rem 0.9rem; margin:0.6rem 0;
+  font-size:0.72rem; line-height:1.8; color:var(--muted);
+  border-radius:0 4px 4px 0;
+}
+.note strong { color:var(--text); }
+
+/* TABLE */
+.tbl { width:100%; border-collapse:collapse; font-size:0.72rem; }
+.tbl th { background:var(--s2); color:var(--muted); padding:0.4rem 0.7rem; text-align:left; border-bottom:1px solid var(--border); font-size:0.62rem; letter-spacing:1px; }
+.tbl td { padding:0.35rem 0.7rem; border-bottom:1px solid var(--border); }
+.tbl tr:last-child td { border-bottom:none; }
+
+/* CONTROLS */
+.ctrl { display:flex; gap:0.5rem; padding:0.7rem 1rem; border-top:1px solid var(--border); flex-wrap:wrap; align-items:center; }
+.btn {
+  font-family:'JetBrains Mono',monospace; font-size:0.72rem;
+  padding:0.4rem 0.9rem; border:1px solid var(--border);
+  background:var(--s2); color:var(--text);
+  cursor:pointer; border-radius:3px; transition:all 0.15s;
+}
+.btn:hover,.btn.on { border-color:var(--tc,#00d4ff); color:var(--tc,#00d4ff); }
+.spd-wrap { margin-left:auto; display:flex; align-items:center; gap:0.4rem; font-size:0.65rem; color:var(--muted); }
+input[type=range].spd { -webkit-appearance:none; width:70px; height:3px; background:var(--border); outline:none; border-radius:2px; }
+input[type=range].spd::-webkit-slider-thumb { -webkit-appearance:none; width:12px;height:12px; background:var(--tc,#00d4ff); border-radius:50%; cursor:pointer; }
+
+/* COMPARISON PAGE */
+.cmp-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:1rem; margin-bottom:1.2rem; }
+.cmp-card { background:var(--s1); border:1px solid var(--border); border-radius:6px; overflow:hidden; text-align:center; }
+.cmp-card-hdr { padding:0.5rem; font-family:'Bebas Neue',sans-serif; font-size:1rem; letter-spacing:2px; border-bottom:1px solid var(--border); }
+.cmp-card-body { padding:0.8rem; font-size:0.7rem; line-height:2; color:var(--muted); }
+
+.noise-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:1rem; margin-bottom:1.2rem; }
+@media(max-width:500px){ .noise-grid { grid-template-columns:1fr; } }
+.noise-card { background:var(--s1); border:1px solid var(--border); border-radius:6px; padding:0.8rem; text-align:center; }
+.noise-lbl { font-size:0.65rem; color:var(--muted); letter-spacing:1px; margin-bottom:0.4rem; }
+
+/* HIGHLIGHT COLORS */
+.g { color:#00ff9f; font-weight:700; }
+.b { color:#00d4ff; font-weight:700; }
+.y { color:#ffd32a; font-weight:700; }
+.o { color:#ff9f43; font-weight:700; }
+.r { color:#ff4757; font-weight:700; }
+.p { color:#a55eea; font-weight:700; }
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <h1>PSK MODULATION — COMPLETE GUIDE</h1>
+  <p>BPSK · QPSK · 8-PSK · 16-PSK · FULL COMPARISON</p>
+</div>
+
+<div class="tabs">
+  <div class="tab active" style="--tc:#00ff9f" onclick="showPage('bpsk',this)">BPSK<span>2 phases · 1 bit/sym</span></div>
+  <div class="tab" style="--tc:#00d4ff" onclick="showPage('qpsk',this)">QPSK<span>4 phases · 2 bits/sym</span></div>
+  <div class="tab" style="--tc:#ffd32a" onclick="showPage('8psk',this)">8-PSK<span>8 phases · 3 bits/sym</span></div>
+  <div class="tab" style="--tc:#ff9f43" onclick="showPage('16psk',this)">16-PSK<span>16 phases · 4 bits/sym</span></div>
+  <div class="tab" style="--tc:#a55eea" onclick="showPage('cmp',this)">COMPARISON<span>all models side by side</span></div>
+</div>
+
+<!-- ═══ BPSK PAGE ═══ -->
+<div class="page active" id="page-bpsk">
+  <div class="two-col">
+    <div class="box">
+      <div class="box-hdr"><div class="led" style="background:#00ff9f"></div>CONSTELLATION — BPSK</div>
+      <div class="box-body" style="display:flex;flex-direction:column;align-items:center;gap:0.5rem">
+        <canvas id="cv-bpsk-const" width="260" height="260"></canvas>
+        <div style="font-size:0.7rem;color:var(--muted)">Active symbol: <span id="lbl-bpsk" style="color:#00ff9f;font-weight:700">1 → 0°</span></div>
+      </div>
+      <div class="ctrl">
+        <button class="btn on" id="btn-bpsk" onclick="toggleAnim('bpsk')">⏸ PAUSE</button>
+        <button class="btn" onclick="nextSym('bpsk')">NEXT SYMBOL →</button>
+        <div class="spd-wrap">Speed <input type="range" class="spd" id="spd-bpsk" min="1" max="5" value="2" style="--tc:#00ff9f"></div>
+      </div>
+    </div>
+    <div class="box">
+      <div class="box-hdr"><div class="led" style="background:#00ff9f"></div>WAVE OUTPUT — BPSK</div>
+      <div class="box-body">
+        <canvas id="cv-bpsk-wave" width="380" height="160" style="width:100%"></canvas>
+      </div>
+      <div style="padding:0.5rem 1rem 0.8rem;font-size:0.68rem;color:var(--muted);line-height:1.8">
+        Wave flips completely (180°) when bit changes from 1→0 or 0→1
+      </div>
+    </div>
+  </div>
+
+  <div class="box">
+    <div class="box-hdr"><div class="led" style="background:#00ff9f"></div>HOW BPSK WORKS</div>
+    <div class="stats" style="--tc:#00ff9f">
+      <div class="stat"><span class="stat-n" style="color:#00ff9f">2</span><span class="stat-l">Phases</span></div>
+      <div class="stat"><span class="stat-n" style="color:#00ff9f">1</span><span class="stat-l">Bit / Symbol</span></div>
+      <div class="stat"><span class="stat-n" style="color:#00ff9f">180°</span><span class="stat-l">Point Separation</span></div>
+    </div>
+    <div class="expl" style="--tc:#00ff9f">
+      <h3 style="color:#00ff9f">What is BPSK?</h3>
+      <p>BPSK is the <span class="g">simplest PSK</span>. Only 2 positions on the circle — exactly opposite each other. The wave either stays normal (<span class="g">0°</span>) or flips completely (<span class="r">180°</span>).</p>
+      <div class="note"><strong>The rule:</strong> Bit <span class="g">1</span> → phase = 0° (wave normal). Bit <span class="r">0</span> → phase = 180° (wave flipped). Every bit change flips the wave.</div>
+      <h3 style="color:#00ff9f">Why so reliable?</h3>
+      <p>The 2 points are <span class="g">180° apart</span> — maximum possible distance. Noise has to push the signal more than 90° to cause an error. That almost never happens.</p>
+      <h3 style="color:#00ff9f">Symbol Mapping</h3>
+      <table class="tbl">
+        <tr><th>Bit</th><th>Phase</th><th>Position on circle</th><th>Wave shape</th></tr>
+        <tr><td style="color:#00ff9f;font-weight:700">1</td><td>0°</td><td>Right (East)</td><td>Normal</td></tr>
+        <tr><td style="color:#ff4757;font-weight:700">0</td><td>180°</td><td>Left (West)</td><td>Flipped (mirror)</td></tr>
+      </table>
+      <div class="note" style="margin-top:0.8rem"><strong>Used in:</strong> GPS satellites, deep-space probes (Voyager!), 802.11b WiFi, submarine cables. Anywhere noise is extreme and reliability beats speed.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ QPSK PAGE ═══ -->
+<div class="page" id="page-qpsk">
+  <div class="two-col">
+    <div class="box">
+      <div class="box-hdr"><div class="led" style="background:#00d4ff"></div>CONSTELLATION — QPSK</div>
+      <div class="box-body" style="display:flex;flex-direction:column;align-items:center;gap:0.5rem">
+        <canvas id="cv-qpsk-const" width="260" height="260"></canvas>
+        <div style="font-size:0.7rem;color:var(--muted)">Active symbol: <span id="lbl-qpsk" style="color:#00d4ff;font-weight:700">00 → 45°</span></div>
+      </div>
+      <div class="ctrl">
+        <button class="btn" id="btn-qpsk" onclick="toggleAnim('qpsk')">▶ PLAY</button>
+        <button class="btn" onclick="nextSym('qpsk')">NEXT SYMBOL →</button>
+        <div class="spd-wrap">Speed <input type="range" class="spd" id="spd-qpsk" min="1" max="5" value="2" style="--tc:#00d4ff"></div>
+      </div>
+    </div>
+    <div class="box">
+      <div class="box-hdr"><div class="led" style="background:#00d4ff"></div>WAVE OUTPUT — QPSK</div>
+      <div class="box-body">
+        <canvas id="cv-qpsk-wave" width="380" height="160" style="width:100%"></canvas>
+      </div>
+      <div style="padding:0.5rem 1rem 0.8rem;font-size:0.68rem;color:var(--muted);line-height:1.8">
+        Wave starting angle shifts by 45°, 90°, or 135° between symbols
+      </div>
+    </div>
+  </div>
+  <div class="box">
+    <div class="box-hdr"><div class="led" style="background:#00d4ff"></div>HOW QPSK WORKS</div>
+    <div class="stats" style="--tc:#00d4ff">
+      <div class="stat"><span class="stat-n" style="color:#00d4ff">4</span><span class="stat-l">Phases</span></div>
+      <div class="stat"><span class="stat-n" style="color:#00d4ff">2</span><span class="stat-l">Bits / Symbol</span></div>
+      <div class="stat"><span class="stat-n" style="color:#00d4ff">90°</span><span class="stat-l">Point Separation</span></div>
+    </div>
+    <div class="expl" style="--tc:#00d4ff">
+      <h3 style="color:#00d4ff">What is QPSK?</h3>
+      <p>QPSK uses <span class="b">4 phases</span> at the 4 diagonal corners (45°, 135°, 225°, 315°). Each position carries <span class="b">2 bits</span> — called a <strong>dibit</strong>. Double the speed of BPSK with the same bandwidth.</p>
+      <div class="note"><strong>Key insight:</strong> Instead of sending bits one at a time, QPSK <span class="b">groups 2 bits together</span> and sends them as one symbol. 2 bits = 4 combinations (00, 01, 10, 11) = 4 phases. Perfect match!</div>
+      <h3 style="color:#00d4ff">Why diagonal positions?</h3>
+      <p>Placing points at 45°, 135°, 225°, 315° (not at 0°, 90°, 180°, 270°) gives <span class="b">equal distance</span> from both axes. This makes it equally resistant to horizontal and vertical noise.</p>
+      <h3 style="color:#00d4ff">Symbol Mapping</h3>
+      <table class="tbl">
+        <tr><th>Dibit</th><th>Phase</th><th>Position</th></tr>
+        <tr><td style="color:#00d4ff;font-weight:700">00</td><td>45°</td><td>NE corner</td></tr>
+        <tr><td style="color:#00ff9f;font-weight:700">01</td><td>135°</td><td>NW corner</td></tr>
+        <tr><td style="color:#ffd32a;font-weight:700">11</td><td>225°</td><td>SW corner</td></tr>
+        <tr><td style="color:#ff9f43;font-weight:700">10</td><td>315°</td><td>SE corner</td></tr>
+      </table>
+      <div class="note" style="margin-top:0.8rem"><strong>Used in:</strong> 4G LTE, satellite TV (DVB), cable internet, UMTS. The most common PSK in real-world systems today.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ 8-PSK PAGE ═══ -->
+<div class="page" id="page-8psk">
+  <div class="two-col">
+    <div class="box">
+      <div class="box-hdr"><div class="led" style="background:#ffd32a"></div>CONSTELLATION — 8-PSK</div>
+      <div class="box-body" style="display:flex;flex-direction:column;align-items:center;gap:0.5rem">
+        <canvas id="cv-8psk-const" width="260" height="260"></canvas>
+        <div style="font-size:0.7rem;color:var(--muted)">Active symbol: <span id="lbl-8psk" style="color:#ffd32a;font-weight:700">000 → 0°</span></div>
+      </div>
+      <div class="ctrl">
+        <button class="btn" id="btn-8psk" onclick="toggleAnim('8psk')">▶ PLAY</button>
+        <button class="btn" onclick="nextSym('8psk')">NEXT SYMBOL →</button>
+        <div class="spd-wrap">Speed <input type="range" class="spd" id="spd-8psk" min="1" max="5" value="2" style="--tc:#ffd32a"></div>
+      </div>
+    </div>
+    <div class="box">
+      <div class="box-hdr"><div class="led" style="background:#ffd32a"></div>WAVE OUTPUT — 8-PSK</div>
+      <div class="box-body">
+        <canvas id="cv-8psk-wave" width="380" height="160" style="width:100%"></canvas>
+      </div>
+      <div style="padding:0.5rem 1rem 0.8rem;font-size:0.68rem;color:var(--muted);line-height:1.8">
+        8 possible starting angles — notice the subtle differences between waves
+      </div>
+    </div>
+  </div>
+  <div class="box">
+    <div class="box-hdr"><div class="led" style="background:#ffd32a"></div>HOW 8-PSK WORKS</div>
+    <div class="stats">
+      <div class="stat"><span class="stat-n" style="color:#ffd32a">8</span><span class="stat-l">Phases</span></div>
+      <div class="stat"><span class="stat-n" style="color:#ffd32a">3</span><span class="stat-l">Bits / Symbol</span></div>
+      <div class="stat"><span class="stat-n" style="color:#ffd32a">45°</span><span class="stat-l">Point Separation</span></div>
+    </div>
+    <div class="expl">
+      <h3 style="color:#ffd32a">What is 8-PSK?</h3>
+      <p>8-PSK places <span class="y">8 points</span> evenly around the circle, every 45°. Each symbol carries <span class="y">3 bits</span> (called a <strong>tribit</strong>). Three times more data than BPSK per symbol.</p>
+      <div class="note" style="border-color:#ffd32a"><strong>Analogy:</strong> BPSK = 2 bus stops. QPSK = 4 stops. 8-PSK = 8 stops. More stops means more destinations (data), but passengers (signals) can accidentally get off at the wrong stop (error) more easily.</div>
+      <h3 style="color:#ffd32a">The crowding problem</h3>
+      <p>With 8 points, each is only <span class="y">45°</span> from its neighbor. Noise only needs to push 22.5° to cause a wrong reading — and that wrong reading means a <span class="r">3-bit error</span>.</p>
+      <h3 style="color:#ffd32a">Symbol Mapping (Gray coded)</h3>
+      <table class="tbl">
+        <tr><th>Tribit</th><th>Phase</th><th>Tribit</th><th>Phase</th></tr>
+        <tr><td style="color:#ffd32a;font-weight:700">000</td><td>0°</td><td style="color:#ffd32a;font-weight:700">100</td><td>180°</td></tr>
+        <tr><td style="color:#ffd32a;font-weight:700">001</td><td>45°</td><td style="color:#ffd32a;font-weight:700">101</td><td>225°</td></tr>
+        <tr><td style="color:#ffd32a;font-weight:700">010</td><td>90°</td><td style="color:#ffd32a;font-weight:700">110</td><td>270°</td></tr>
+        <tr><td style="color:#ffd32a;font-weight:700">011</td><td>135°</td><td style="color:#ffd32a;font-weight:700">111</td><td>315°</td></tr>
+      </table>
+      <div class="note" style="border-color:#ffd32a;margin-top:0.8rem"><strong>Used in:</strong> DVB-S2 satellite broadcasting, EDGE mobile network, microwave point-to-point links — clean, controlled channels only.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ 16-PSK PAGE ═══ -->
+<div class="page" id="page-16psk">
+  <div class="two-col">
+    <div class="box">
+      <div class="box-hdr"><div class="led" style="background:#ff9f43"></div>CONSTELLATION — 16-PSK</div>
+      <div class="box-body" style="display:flex;flex-direction:column;align-items:center;gap:0.5rem">
+        <canvas id="cv-16psk-const" width="260" height="260"></canvas>
+        <div style="font-size:0.7rem;color:var(--muted)">Active symbol: <span id="lbl-16psk" style="color:#ff9f43;font-weight:700">0000 → 0°</span></div>
+      </div>
+      <div class="ctrl">
+        <button class="btn" id="btn-16psk" onclick="toggleAnim('16psk')">▶ PLAY</button>
+        <button class="btn" onclick="nextSym('16psk')">NEXT SYMBOL →</button>
+        <div class="spd-wrap">Speed <input type="range" class="spd" id="spd-16psk" min="1" max="5" value="2" style="--tc:#ff9f43"></div>
+      </div>
+    </div>
+    <div class="box">
+      <div class="box-hdr"><div class="led" style="background:#ff9f43"></div>WAVE OUTPUT — 16-PSK</div>
+      <div class="box-body">
+        <canvas id="cv-16psk-wave" width="380" height="160" style="width:100%"></canvas>
+      </div>
+      <div style="padding:0.5rem 1rem 0.8rem;font-size:0.68rem;color:var(--muted);line-height:1.8">
+        16 phases only 22.5° apart — waves look very similar, hard to distinguish
+      </div>
+    </div>
+  </div>
+  <div class="box">
+    <div class="box-hdr"><div class="led" style="background:#ff9f43"></div>HOW 16-PSK WORKS</div>
+    <div class="stats">
+      <div class="stat"><span class="stat-n" style="color:#ff9f43">16</span><span class="stat-l">Phases</span></div>
+      <div class="stat"><span class="stat-n" style="color:#ff9f43">4</span><span class="stat-l">Bits / Symbol</span></div>
+      <div class="stat"><span class="stat-n" style="color:#ff9f43">22.5°</span><span class="stat-l">Point Separation</span></div>
+    </div>
+    <div class="expl">
+      <h3 style="color:#ff9f43">What is 16-PSK?</h3>
+      <p>16-PSK packs <span class="o">16 points</span> on the circle — one every 22.5°. Each symbol carries <span class="o">4 bits</span>. This is where pure phase modulation reaches its practical limit.</p>
+      <div class="note" style="border-color:#ff9f43"><strong>The problem:</strong> 16 points crammed on a circle means each point is only <span class="o">22.5°</span> from its neighbors. The slightest noise nudge (11.25°) sends the signal to the wrong point — causing a 4-bit error.</div>
+      <h3 style="color:#ff9f43">Why use QAM instead?</h3>
+      <p>At 16 levels, it's smarter to also vary the <span class="o">amplitude</span> (distance from center), not just the phase. This spreads the 16 points across 2D space instead of cramming them on a circle. <span class="o">16-QAM</span> beats 16-PSK in almost every scenario.</p>
+      <h3 style="color:#ff9f43">When is 16-PSK actually used?</h3>
+      <p>Only when amplitude must stay <span class="o">constant</span> — like certain satellite links that use nonlinear amplifiers. In those cases, changing amplitude causes distortion, so you're stuck with pure phase shifting.</p>
+      <div class="note" style="border-color:#ff9f43;margin-top:0.8rem"><strong>The wall:</strong> 16-PSK is the practical ceiling of PSK. Modern 4G/5G systems switch to QAM-64, QAM-256 or higher — using both phase AND amplitude together for massive data rates.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ COMPARISON PAGE ═══ -->
+<div class="page" id="page-cmp">
+  <div class="box" style="margin-bottom:1.2rem">
+    <div class="box-hdr"><div class="led" style="background:#a55eea"></div>ALL PSK MODELS — CONSTELLATION DIAGRAMS</div>
+    <div class="cmp-grid" style="padding:1rem">
+      <div class="cmp-card">
+        <div class="cmp-card-hdr" style="color:#00ff9f">BPSK</div>
+        <div class="box-body"><canvas id="cv-cmp-bpsk" width="180" height="180"></canvas></div>
+        <div class="cmp-card-body">
+          Phases: <span style="color:#00ff9f">2</span><br>
+          Bits/sym: <span style="color:#00ff9f">1</span><br>
+          Gap: <span style="color:#00ff9f">180°</span><br>
+          Noise resist: <span style="color:#00ff9f">★★★★★</span><br>
+          Speed: <span style="color:#00ff9f">★★☆☆☆</span>
+        </div>
+      </div>
+      <div class="cmp-card">
+        <div class="cmp-card-hdr" style="color:#00d4ff">QPSK</div>
+        <div class="box-body"><canvas id="cv-cmp-qpsk" width="180" height="180"></canvas></div>
+        <div class="cmp-card-body">
+          Phases: <span style="color:#00d4ff">4</span><br>
+          Bits/sym: <span style="color:#00d4ff">2</span><br>
+          Gap: <span style="color:#00d4ff">90°</span><br>
+          Noise resist: <span style="color:#00d4ff">★★★★☆</span><br>
+          Speed: <span style="color:#00d4ff">★★★☆☆</span>
+        </div>
+      </div>
+      <div class="cmp-card">
+        <div class="cmp-card-hdr" style="color:#ffd32a">8-PSK</div>
+        <div class="box-body"><canvas id="cv-cmp-8psk" width="180" height="180"></canvas></div>
+        <div class="cmp-card-body">
+          Phases: <span style="color:#ffd32a">8</span><br>
+          Bits/sym: <span style="color:#ffd32a">3</span><br>
+          Gap: <span style="color:#ffd32a">45°</span><br>
+          Noise resist: <span style="color:#ffd32a">★★★☆☆</span><br>
+          Speed: <span style="color:#ffd32a">★★★★☆</span>
+        </div>
+      </div>
+      <div class="cmp-card">
+        <div class="cmp-card-hdr" style="color:#ff9f43">16-PSK</div>
+        <div class="box-body"><canvas id="cv-cmp-16psk" width="180" height="180"></canvas></div>
+        <div class="cmp-card-body">
+          Phases: <span style="color:#ff9f43">16</span><br>
+          Bits/sym: <span style="color:#ff9f43">4</span><br>
+          Gap: <span style="color:#ff9f43">22.5°</span><br>
+          Noise resist: <span style="color:#ff9f43">★★☆☆☆</span><br>
+          Speed: <span style="color:#ff9f43">★★★★★</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="box" style="margin-bottom:1.2rem">
+    <div class="box-hdr"><div class="led" style="background:#a55eea"></div>NOISE EFFECT — HOW CROWDING CAUSES ERRORS</div>
+    <div class="noise-grid" style="padding:1rem">
+      <div class="noise-card">
+        <div class="noise-lbl">BPSK under noise</div>
+        <canvas id="cv-noise-bpsk" width="160" height="160" style="display:block;margin:0 auto"></canvas>
+        <div style="color:#00ff9f;font-family:'Bebas Neue';font-size:1.1rem;letter-spacing:2px;margin-top:0.4rem">SAFE</div>
+        <div class="noise-lbl">180° gap — nearly impossible to confuse</div>
+      </div>
+      <div class="noise-card">
+        <div class="noise-lbl">QPSK under noise</div>
+        <canvas id="cv-noise-qpsk" width="160" height="160" style="display:block;margin:0 auto"></canvas>
+        <div style="color:#ffd32a;font-family:'Bebas Neue';font-size:1.1rem;letter-spacing:2px;margin-top:0.4rem">MODERATE</div>
+        <div class="noise-lbl">90° gap — manageable with decent signal</div>
+      </div>
+      <div class="noise-card">
+        <div class="noise-lbl">8-PSK under noise</div>
+        <canvas id="cv-noise-8psk" width="160" height="160" style="display:block;margin:0 auto"></canvas>
+        <div style="color:#ff4757;font-family:'Bebas Neue';font-size:1.1rem;letter-spacing:2px;margin-top:0.4rem">RISKY</div>
+        <div class="noise-lbl">45° gap — clouds overlap easily</div>
+      </div>
+    </div>
+    <div style="padding:0 1rem 1rem;font-size:0.72rem;line-height:1.9;color:var(--muted)">
+      Each dot cloud = where a signal <em>actually</em> arrives after going through a noisy channel. When clouds from different symbols overlap, the receiver reads the wrong symbol = bit error.
+    </div>
+  </div>
+
+  <div class="box">
+    <div class="box-hdr"><div class="led" style="background:#a55eea"></div>THE GOLDEN RULE OF PSK</div>
+    <div style="padding:1rem">
+      <table class="tbl" style="margin-bottom:1rem">
+        <tr><th>Model</th><th>Phases</th><th>Bits/Sym</th><th>Gap</th><th>Noise</th><th>Speed</th><th>Real-world use</th></tr>
+        <tr><td style="color:#00ff9f;font-weight:700">BPSK</td><td>2</td><td>1</td><td style="color:#00ff9f">180°</td><td>Excellent</td><td>Low</td><td style="color:var(--muted);font-size:0.65rem">GPS, deep space, 802.11b</td></tr>
+        <tr><td style="color:#00d4ff;font-weight:700">QPSK</td><td>4</td><td>2</td><td style="color:#00d4ff">90°</td><td>Good</td><td>Medium</td><td style="color:var(--muted);font-size:0.65rem">4G LTE, DVB, satellite TV</td></tr>
+        <tr><td style="color:#ffd32a;font-weight:700">8-PSK</td><td>8</td><td>3</td><td style="color:#ffd32a">45°</td><td>Moderate</td><td>Fast</td><td style="color:var(--muted);font-size:0.65rem">DVB-S2, EDGE, microwave</td></tr>
+        <tr><td style="color:#ff9f43;font-weight:700">16-PSK</td><td>16</td><td>4</td><td style="color:#ff9f43">22.5°</td><td>Poor</td><td>Very fast</td><td style="color:var(--muted);font-size:0.65rem">Special satellites only</td></tr>
+      </table>
+      <div class="note" style="border-color:#a55eea">
+        <strong>The law:</strong> Every time you double the phases → +1 bit per symbol, but points get twice as close → noise danger doubles.<br><br>
+        <strong>How 5G solves this:</strong> It uses <span style="color:#a55eea;font-weight:700">Adaptive Modulation</span>. Your phone constantly measures signal quality:<br>
+        Weak signal → switch to BPSK (safe) ·  OK signal → QPSK · Strong signal → 16-QAM or 256-QAM (fast)<br>
+        That's why your download speed changes depending on where you are!
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════
+// DATA
+// ═══════════════════════════════════════════════════════════════
+const MODELS = {
+  bpsk:   { color:'#00ff9f', angles:[0,180],        labels:['1 → 0°','0 → 180°'] },
+  qpsk:   { color:'#00d4ff', angles:[45,135,225,315], labels:['00 → 45°','01 → 135°','11 → 225°','10 → 315°'] },
+  '8psk': { color:'#ffd32a', angles:[0,45,90,135,180,225,270,315], labels:['000→0°','001→45°','010→90°','011→135°','100→180°','101→225°','110→270°','111→315°'] },
+  '16psk':{ color:'#ff9f43', angles:Array.from({length:16},(_,i)=>i*22.5), labels:Array.from({length:16},(_,i)=>['0000','0001','0011','0010','0110','0111','0101','0100','1100','1101','1111','1110','1010','1011','1001','1000'][i]+'→'+(i*22.5)+'°') }
+};
+
+// ═══════════════════════════════════════════════════════════════
+// ANIM STATE (one per model)
+// Per-symbol: animAngle = continuous radians travelled this symbol
+//             waveHistory = [{x,y}] drawn points
+//             waveX = current wave x pen position
+// ═══════════════════════════════════════════════════════════════
+const STATE = {};
+['bpsk','qpsk','8psk','16psk'].forEach(k => {
+  STATE[k] = {
+    running: false, id: null, lastTs: null,
+    symIdx: 0,
+    animAngle: 0,    // continuous angle accumulator (radians)
+    trailPoints: [], // dot trail on circle
+    waveHistory: [],
+    waveX: 0,        // current pen x on wave canvas
+  };
+});
+
+// ═══════════════════════════════════════════════════════════════
+// HELPERS
+// ═══════════════════════════════════════════════════════════════
+function getConstDims(cv) {
+  const W = cv.width, H = cv.height;
+  const cx = W/2, cy = H/2;
+  const R = Math.min(W,H) * 0.35;
+  return { W, H, cx, cy, R };
+}
+
+function getWaveDims(cv) {
+  if (cv.offsetWidth > 0 && cv.width !== cv.offsetWidth) cv.width = cv.offsetWidth;
+  const W = cv.width, H = cv.height;
+  const mx = 14, my = 16, pw = W - mx*2, ph = H - my*2;
+  const cy = my + ph/2, amp = ph/2 - 8;
+  return { W, H, mx, my, pw, ph, cy, amp };
+}
+
+// ═══════════════════════════════════════════════════════════════
+// DRAW CONSTELLATION  (circle-to-wave style: arm + spinning dot)
+// ═══════════════════════════════════════════════════════════════
+function drawConst(cvId, modelKey, activeIdx, spinAngleRad, trailPts) {
+  const cv = document.getElementById(cvId);
+  if (!cv) return;
+  const ctx = cv.getContext('2d');
+  const { W, H, cx, cy, R } = getConstDims(cv);
+  const m = MODELS[modelKey];
+
+  ctx.fillStyle = '#0f1520'; ctx.fillRect(0,0,W,H);
+
+  // Grid circles
+  [0.35,0.67,1].forEach(f => {
+    ctx.beginPath(); ctx.arc(cx,cy,R*f,0,Math.PI*2);
+    ctx.strokeStyle='#1e2d3d'; ctx.lineWidth=1; ctx.stroke();
+  });
+
+  // Axes
+  ctx.setLineDash([4,4]); ctx.strokeStyle='#1e2d3d'; ctx.lineWidth=1;
+  ctx.beginPath(); ctx.moveTo(cx-R-8,cy); ctx.lineTo(cx+R+8,cy); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(cx,cy-R-8); ctx.lineTo(cx,cy+R+8); ctx.stroke();
+  ctx.setLineDash([]);
+
+  // All constellation points (dim)
+  m.angles.forEach((deg,i) => {
+    const rad = deg * Math.PI / 180;
+    const x = cx + R * Math.cos(-rad);
+    const y = cy + R * Math.sin(-rad);
+    const isActive = i === activeIdx && spinAngleRad === undefined;
+
+    // Spoke (dim unless static active)
+    ctx.beginPath(); ctx.moveTo(cx,cy); ctx.lineTo(x,y);
+    ctx.strokeStyle = isActive ? m.color+'cc' : m.color+'22';
+    ctx.lineWidth = isActive ? 2 : 0.7; ctx.stroke();
+
+    // Dot ring
+    const r = W > 200 ? 5 : 4;
+    ctx.beginPath(); ctx.arc(x,y,r,0,Math.PI*2);
+    ctx.fillStyle = isActive ? m.color : m.color+'33'; ctx.fill();
+    ctx.strokeStyle = m.color+'66'; ctx.lineWidth=1; ctx.stroke();
+
+    // Label
+    if (W > 180) {
+      const dist = W > 220 ? R+18 : R+14;
+      const lx = cx + dist * Math.cos(-rad);
+      const ly = cy + dist * Math.sin(-rad);
+      ctx.fillStyle = isActive ? m.color : '#2a3f52';
+      ctx.font = `${W>220?9:7}px JetBrains Mono`;
+      ctx.textAlign='center'; ctx.textBaseline='middle';
+      const short = m.angles.length <= 4 ? m.labels[i].split('→')[0] : (m.angles.length<=8 ? m.labels[i].split('→')[0] : deg+'°');
+      ctx.fillText(short, lx, ly);
+    }
+  });
+
+  // ── Spinning dot (only when animating) ──────────────────────
+  if (spinAngleRad !== undefined) {
+    const dotX = cx + R * Math.cos(spinAngleRad);
+    const dotY = cy - R * Math.sin(spinAngleRad);
+
+    // Trail
+    if (trailPts && trailPts.length > 1) {
+      trailPts.forEach((p, i) => {
+        ctx.beginPath(); ctx.arc(p.x, p.y, 2, 0, Math.PI*2);
+        ctx.fillStyle = m.color + Math.floor(i/trailPts.length*80+10).toString(16).padStart(2,'0');
+        ctx.fill();
+      });
+    }
+
+    // Arm from center to dot
+    ctx.beginPath(); ctx.moveTo(cx,cy); ctx.lineTo(dotX,dotY);
+    ctx.strokeStyle = m.color; ctx.lineWidth = 2; ctx.stroke();
+
+    // Glow
+    const grd = ctx.createRadialGradient(dotX,dotY,0,dotX,dotY,16);
+    grd.addColorStop(0, m.color+'88'); grd.addColorStop(1, m.color+'00');
+    ctx.fillStyle = grd;
+    ctx.beginPath(); ctx.arc(dotX,dotY,16,0,Math.PI*2); ctx.fill();
+
+    // Main dot
+    ctx.beginPath(); ctx.arc(dotX,dotY,8,0,Math.PI*2);
+    ctx.fillStyle = m.color; ctx.fill();
+    ctx.strokeStyle = '#fff'; ctx.lineWidth = 1.5; ctx.stroke();
+  }
+
+  // Center
+  ctx.beginPath(); ctx.arc(cx,cy,3,0,Math.PI*2); ctx.fillStyle='#4a6070'; ctx.fill();
+}
+
+// ═══════════════════════════════════════════════════════════════
+// DRAW WAVE  — with live dot indicator + starts from phase angle
+// ═══════════════════════════════════════════════════════════════
+function drawWave(cvId, modelKey, history, symIdx, liveDotY) {
+  const cv = document.getElementById(cvId);
+  if (!cv) return;
+  const ctx = cv.getContext('2d');
+  const { W, H, mx, my, pw, ph, cy, amp } = getWaveDims(cv);
+  const m = MODELS[modelKey];
+
+  ctx.fillStyle='#0f1520'; ctx.fillRect(0,0,W,H);
+
+  // Center line
+  ctx.strokeStyle='#1e2d3d'; ctx.lineWidth=0.8;
+  ctx.setLineDash([3,3]);
+  ctx.beginPath(); ctx.moveTo(mx,cy); ctx.lineTo(mx+pw,cy); ctx.stroke();
+  ctx.setLineDash([]);
+
+  // Wave history
+  if (history.length > 1) {
+    ctx.beginPath();
+    history.forEach((p,i) => i===0 ? ctx.moveTo(p.x,p.y) : ctx.lineTo(p.x,p.y));
+    ctx.strokeStyle=m.color; ctx.lineWidth=2.5; ctx.stroke();
+  }
+
+  // Live dot on wave edge (matches constellation dot y)
+  if (liveDotY !== undefined && history.length > 0) {
+    const last = history[history.length-1];
+    // small glowing dot at current write position
+    const grd2 = ctx.createRadialGradient(last.x,last.y,0,last.x,last.y,10);
+    grd2.addColorStop(0,m.color+'cc'); grd2.addColorStop(1,m.color+'00');
+    ctx.fillStyle=grd2; ctx.beginPath(); ctx.arc(last.x,last.y,10,0,Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(last.x,last.y,4,0,Math.PI*2);
+    ctx.fillStyle=m.color; ctx.fill();
+    ctx.strokeStyle='#fff'; ctx.lineWidth=1.2; ctx.stroke();
+  }
+
+  // Label
+  if (symIdx >= 0) {
+    ctx.fillStyle=m.color; ctx.font='bold 10px JetBrains Mono';
+    ctx.textAlign='left'; ctx.textBaseline='top';
+    ctx.fillText('φ = ' + m.angles[symIdx] + '°  [' + m.labels[symIdx].split('→')[0].trim() + ']', mx+4, my);
+  }
+
+  // Axis arrow
+  ctx.fillStyle='#2a3f52'; ctx.font='8px JetBrains Mono';
+  ctx.textAlign='right'; ctx.textBaseline='bottom';
+  ctx.fillText('time →', mx+pw, my+ph);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// ANIM LOOP  — circle-to-wave style
+// ═══════════════════════════════════════════════════════════════
+function animLoop(key, ts) {
+  const s = STATE[key];
+  const m = MODELS[key];
+  if (!s.running) return;
+  if (!s.lastTs) s.lastTs = ts;
+  const dt = Math.min(ts - s.lastTs, 50);
+  s.lastTs = ts;
+
+  const spd = parseInt(document.getElementById('spd-'+key)?.value || 2);
+  // Same speed formula as circle-to-wave: spd * 0.0008 rad/ms
+  const radPerMs = spd * 0.0008;
+  s.animAngle += radPerMs * dt;
+
+  // One full cycle (2π) = one symbol period
+  const progress = (s.animAngle % (Math.PI*2)) / (Math.PI*2); // 0..1
+
+  // Switch symbol when we complete a full revolution
+  if (s.animAngle >= Math.PI*2) {
+    s.animAngle -= Math.PI*2;
+    s.symIdx = (s.symIdx + 1) % m.angles.length;
+    s.waveHistory = [];
+    s.waveX = 0;
+    s.trailPoints = [];
+    const lbl = document.getElementById('lbl-'+key);
+    if (lbl) lbl.textContent = m.labels[s.symIdx];
+  }
+
+  // Phase of this symbol (start angle on circle)
+  const phRad = m.angles[s.symIdx] * Math.PI / 180;
+  // Total angle on circle = phase offset + how far we've spun this symbol
+  const drawAngle = phRad + s.animAngle;   // CCW convention
+
+  // ── Constellation canvas ─────────────────────────────────
+  const constCv = document.getElementById('cv-'+key+'-const');
+  if (constCv) {
+    const { cx, cy: ccy, R } = getConstDims(constCv);
+    const dotX = cx + R * Math.cos(drawAngle);
+    const dotY = ccy - R * Math.sin(drawAngle);
+    s.trailPoints.push({x: dotX, y: dotY});
+    if (s.trailPoints.length > 60) s.trailPoints.shift();
+    drawConst('cv-'+key+'-const', key, s.symIdx, drawAngle, s.trailPoints);
+  }
+
+  // ── Wave canvas ──────────────────────────────────────────
+  const wv = document.getElementById('cv-'+key+'-wave');
+  if (wv) {
+    const { mx, my, pw, ph, cy: wcy, amp } = getWaveDims(wv);
+    const wx = mx + progress * pw;
+    // sin value — identical formula to circle-to-wave:
+    // drawAngle drives both the circle dot AND the wave height
+    const wy = wcy - amp * Math.sin(drawAngle);
+    if (s.waveX <= mx + pw) {
+      s.waveHistory.push({x: wx, y: wy});
+      s.waveX = wx;
+    }
+    if (s.waveX >= mx + pw - 2) {
+      s.waveHistory = [];
+      s.waveX = mx;
+    }
+    drawWave('cv-'+key+'-wave', key, s.waveHistory, s.symIdx, wy);
+  }
+
+  s.id = requestAnimationFrame(ts2 => animLoop(key, ts2));
+}
+
+function startAnim(key) {
+  const s = STATE[key];
+  if (s.running) return;
+  s.running = true; s.lastTs = null;
+  s.id = requestAnimationFrame(ts => animLoop(key, ts));
+  const btn = document.getElementById('btn-'+key);
+  if (btn) { btn.textContent='⏸ PAUSE'; btn.classList.add('on'); }
+}
+
+function stopAnim(key) {
+  const s = STATE[key];
+  s.running = false;
+  if (s.id) { cancelAnimationFrame(s.id); s.id = null; }
+  const btn = document.getElementById('btn-'+key);
+  if (btn) { btn.textContent='▶ PLAY'; btn.classList.remove('on'); }
+}
+
+function toggleAnim(key) {
+  STATE[key].running ? stopAnim(key) : startAnim(key);
+}
+
+function nextSym(key) {
+  const s = STATE[key];
+  const m = MODELS[key];
+  s.symIdx = (s.symIdx + 1) % m.angles.length;
+  s.waveHistory = []; s.waveX = 0; s.animAngle = 0; s.trailPoints = [];
+  const lbl = document.getElementById('lbl-'+key);
+  if (lbl) lbl.textContent = m.labels[s.symIdx];
+  // Draw static first frame at phase start
+  const phRad = m.angles[s.symIdx] * Math.PI / 180;
+  drawConst('cv-'+key+'-const', key, s.symIdx, phRad, []);
+  drawWave('cv-'+key+'-wave', key, [], s.symIdx);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// NOISE CONSTELLATION
+// ═══════════════════════════════════════════════════════════════
+function drawNoise(cvId, modelKey, noisePx) {
+  const cv = document.getElementById(cvId);
+  if (!cv) return;
+  const ctx = cv.getContext('2d');
+  const W=cv.width, H=cv.height, cx=W/2, cy=H/2, R=W*0.35;
+  const m = MODELS[modelKey];
+
+  ctx.fillStyle='#0f1520'; ctx.fillRect(0,0,W,H);
+  ctx.beginPath(); ctx.arc(cx,cy,R,0,Math.PI*2);
+  ctx.strokeStyle='#1e2d3d'; ctx.lineWidth=1; ctx.stroke();
+
+  m.angles.forEach(deg => {
+    const rad = deg*Math.PI/180;
+    const px = cx+R*Math.cos(-rad), py = cy+R*Math.sin(-rad);
+    for (let j=0;j<25;j++){
+      const nx=px+(Math.random()-0.5)*noisePx*2;
+      const ny=py+(Math.random()-0.5)*noisePx*2;
+      ctx.beginPath(); ctx.arc(nx,ny,1.8,0,Math.PI*2);
+      ctx.fillStyle=m.color+'55'; ctx.fill();
+    }
+    ctx.beginPath(); ctx.arc(px,py,5,0,Math.PI*2);
+    ctx.fillStyle=m.color; ctx.fill();
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════
+// PAGE SWITCHING
+// ═══════════════════════════════════════════════════════════════
+function showPage(key, tabEl) {
+  ['bpsk','qpsk','8psk','16psk'].forEach(k => stopAnim(k));
+
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+
+  document.getElementById('page-'+key).classList.add('active');
+  tabEl.classList.add('active');
+
+  if (key === 'cmp') {
+    setTimeout(() => {
+      drawConst('cv-cmp-bpsk','bpsk',-1);
+      drawConst('cv-cmp-qpsk','qpsk',-1);
+      drawConst('cv-cmp-8psk','8psk',-1);
+      drawConst('cv-cmp-16psk','16psk',-1);
+      drawNoise('cv-noise-bpsk','bpsk',10);
+      drawNoise('cv-noise-qpsk','qpsk',13);
+      drawNoise('cv-noise-8psk','8psk',13);
+    }, 30);
+  } else {
+    // Reset angle so dot starts at the phase point of symbol 0
+    const s = STATE[key];
+    s.animAngle = 0; s.waveHistory = []; s.waveX = 0; s.trailPoints = [];
+    setTimeout(() => {
+      const phRad = MODELS[key].angles[s.symIdx] * Math.PI / 180;
+      drawConst('cv-'+key+'-const', key, s.symIdx, phRad, []);
+      drawWave('cv-'+key+'-wave', key, [], s.symIdx);
+      startAnim(key);
+    }, 30);
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════════════
+window.addEventListener('load', () => {
+  const s = STATE['bpsk'];
+  const phRad = MODELS['bpsk'].angles[0] * Math.PI / 180;
+  drawConst('cv-bpsk-const','bpsk',0,phRad,[]);
+  drawWave('cv-bpsk-wave','bpsk',[],0);
+  startAnim('bpsk');
+});
+</script>
+</body>
+</html>
